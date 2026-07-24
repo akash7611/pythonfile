@@ -1,0 +1,10 @@
+pin=int(input("enter the pin"))
+blance=50000
+if pin==7611:
+  amount=int(input("enter the amount"))
+if amount<=blance:
+    print("tranction complte")
+else:
+    print("tranction not complte")
+
+
