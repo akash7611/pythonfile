@@ -1,0 +1,20 @@
+#include<stdio.h>
+int main(){
+    int a,b,c;
+    printf("enter any number ");
+    scanf("%d",&a);
+    if(a>b&&a>c){
+        printf("a is gratest");
+    }
+    printf("enter any number");
+    scanf("%d",&b);
+    if(b>a&&b>c){
+        printf("b is greatest");
+    }
+    printf("enter any num;ber");
+    scanf("%d",&c);
+    if(c>a&&c>b){
+        printf("c is greatest");
+    }
+    return 0;
+}
