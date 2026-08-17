@@ -1,0 +1,151 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f5f7fb;
+  color: #172033;
+}
+
+.app {
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 50px;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.header p {
+  margin: 5px 0 0;
+  color: #6b7280;
+}
+
+.status {
+  font-weight: bold;
+}
+
+.dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  background: #9ca3af;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.dot.live {
+  background: #22c55e;
+}
+
+.dashboard {
+  max-width: 1100px;
+  margin: auto;
+  padding: 40px 25px;
+}
+
+.welcome {
+  background: white;
+  padding: 35px;
+  border-radius: 18px;
+  margin-bottom: 25px;
+  border: 1px solid #e5e7eb;
+}
+
+.welcome h2 {
+  margin-top: 0;
+  font-size: 30px;
+}
+
+.welcome p {
+  color: #6b7280;
+  max-width: 650px;
+  line-height: 1.6;
+}
+
+button {
+  padding: 13px 22px;
+  border: none;
+  border-radius: 10px;
+  background: #111827;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 25px;
+}
+
+.card,
+.confusion {
+  background: white;
+  padding: 25px;
+  border-radius: 18px;
+  border: 1px solid #e5e7eb;
+}
+
+.card h3 {
+  margin-top: 0;
+}
+
+.transcript,
+.ai-message {
+  min-height: 120px;
+  padding: 18px;
+  background: #f8fafc;
+  border-radius: 12px;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+.confusion {
+  margin-top: 25px;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
+
+.stats div {
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.stats strong {
+  display: block;
+  font-size: 28px;
+  margin-bottom: 7px;
+}
+
+.stats span {
+  color: #64748b;
+}
+
+@media (max-width: 700px) {
+  .cards,
+  .stats {
+    grid-template-columns: 1fr;
+  }
+
+  .header {
+    padding: 20px;
+  }
+}
