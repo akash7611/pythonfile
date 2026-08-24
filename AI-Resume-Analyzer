@@ -1,0 +1,210 @@
+import streamlit as st
+import PyPDF2
+import re
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
+st.set_page_config(
+    page_title="AI Resume Analyzer",
+    page_icon="📄",
+    layout="wide"
+)
+
+st.title("📄 AI Resume Analyzer")
+st.write("Upload your resume and compare it with a job description.")
+
+# Common technical skills
+SKILLS = [
+    "python", "java", "c++", "sql", "excel", "power bi",
+    "tableau", "machine learning", "deep learning", "nlp",
+    "pandas", "numpy", "scikit-learn", "tensorflow",
+    "pytorch", "aws", "azure", "git", "github",
+    "html", "css", "javascript", "react", "mongodb",
+    "mysql", "data analysis", "data visualization"
+]
+
+
+def extract_text_from_pdf(uploaded_file):
+    reader = PyPDF2.PdfReader(uploaded_file)
+    text = ""
+
+    for page in reader.pages:
+        page_text = page.extract_text()
+        if page_text:
+            text += page_text + "\n"
+
+    return text
+
+
+def find_skills(text):
+    text = text.lower()
+    found = []
+
+    for skill in SKILLS:
+        if skill in text:
+            found.append(skill)
+
+    return sorted(set(found))
+
+
+def calculate_match(resume, job_description):
+    vectorizer = TfidfVectorizer(stop_words="english")
+
+    vectors = vectorizer.fit_transform([
+        resume,
+        job_description
+    ])
+
+    score = cosine_similarity(vectors[0:1], vectors[1:2])[0][0]
+
+    return round(score * 100, 2)
+
+
+def clean_text(text):
+    text = text.lower()
+    text = re.sub(r"\s+", " ", text)
+    return text
+
+
+# Sidebar
+st.sidebar.header("⚙️ Resume Analyzer")
+
+uploaded_file = st.sidebar.file_uploader(
+    "Upload Resume (PDF)",
+    type=["pdf"]
+)
+
+job_description = st.sidebar.text_area(
+    "Paste Job Description",
+    height=250,
+    placeholder="Paste the job description here..."
+)
+
+analyze = st.sidebar.button("🔍 Analyze Resume")
+
+
+if analyze:
+
+    if uploaded_file is None:
+        st.warning("⚠️ Please upload your resume PDF.")
+        st.stop()
+
+    if not job_description.strip():
+        st.warning("⚠️ Please enter a job description.")
+        st.stop()
+
+    with st.spinner("Analyzing your resume..."):
+
+        resume_text = extract_text_from_pdf(uploaded_file)
+
+        if not resume_text.strip():
+            st.error("❌ Could not extract text from this PDF.")
+            st.stop()
+
+        resume_clean = clean_text(resume_text)
+        job_clean = clean_text(job_description)
+
+        # Match score
+        match_score = calculate_match(
+            resume_clean,
+            job_clean
+        )
+
+        # Skills
+        resume_skills = find_skills(resume_clean)
+        job_skills = find_skills(job_clean)
+
+        matched_skills = sorted(
+            set(resume_skills) & set(job_skills)
+        )
+
+        missing_skills = sorted(
+            set(job_skills) - set(resume_skills)
+        )
+
+    st.success("✅ Resume analysis completed!")
+
+    # Score
+    st.subheader("📊 Resume Match Score")
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.metric(
+            "Match Score",
+            f"{match_score}%"
+        )
+
+    with col2:
+        st.metric(
+            "Matched Skills",
+            len(matched_skills)
+        )
+
+    with col3:
+        st.metric(
+            "Missing Skills",
+            len(missing_skills)
+        )
+
+    st.progress(min(match_score / 100, 1.0))
+
+    # Skills section
+    st.subheader("🧠 Skills Analysis")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("### ✅ Skills Found")
+
+        if matched_skills:
+            for skill in matched_skills:
+                st.write(f"✔️ {skill.title()}")
+        else:
+            st.write("No matching skills found.")
+
+    with col2:
+        st.markdown("### ❌ Missing Skills")
+
+        if missing_skills:
+            for skill in missing_skills:
+                st.write(f"🔴 {skill.title()}")
+        else:
+            st.write("🎉 No major missing skills!")
+
+    # Suggestions
+    st.subheader("💡 Resume Improvement Suggestions")
+
+    if match_score < 40:
+        st.error(
+            "Your resume has a low match with this job. "
+            "Consider adding relevant projects, skills and keywords."
+        )
+
+    elif match_score < 70:
+        st.warning(
+            "Your resume has a moderate match. "
+            "Try adding the missing technical skills and relevant experience."
+        )
+
+    else:
+        st.success(
+            "Your resume has a strong match with this job! "
+            "Keep your resume focused and achievement-oriented."
+        )
+
+    if missing_skills:
+        st.info(
+            "Recommended skills to learn/add: "
+            + ", ".join(skill.title() for skill in missing_skills)
+        )
+
+    # Resume preview
+    with st.expander("📄 View Extracted Resume Text"):
+        st.text(resume_text[:10000])
+
+else:
+    st.info(
+        "👈 Upload your resume PDF and paste a job description "
+        "from the sidebar to start the analysis."
+    )
