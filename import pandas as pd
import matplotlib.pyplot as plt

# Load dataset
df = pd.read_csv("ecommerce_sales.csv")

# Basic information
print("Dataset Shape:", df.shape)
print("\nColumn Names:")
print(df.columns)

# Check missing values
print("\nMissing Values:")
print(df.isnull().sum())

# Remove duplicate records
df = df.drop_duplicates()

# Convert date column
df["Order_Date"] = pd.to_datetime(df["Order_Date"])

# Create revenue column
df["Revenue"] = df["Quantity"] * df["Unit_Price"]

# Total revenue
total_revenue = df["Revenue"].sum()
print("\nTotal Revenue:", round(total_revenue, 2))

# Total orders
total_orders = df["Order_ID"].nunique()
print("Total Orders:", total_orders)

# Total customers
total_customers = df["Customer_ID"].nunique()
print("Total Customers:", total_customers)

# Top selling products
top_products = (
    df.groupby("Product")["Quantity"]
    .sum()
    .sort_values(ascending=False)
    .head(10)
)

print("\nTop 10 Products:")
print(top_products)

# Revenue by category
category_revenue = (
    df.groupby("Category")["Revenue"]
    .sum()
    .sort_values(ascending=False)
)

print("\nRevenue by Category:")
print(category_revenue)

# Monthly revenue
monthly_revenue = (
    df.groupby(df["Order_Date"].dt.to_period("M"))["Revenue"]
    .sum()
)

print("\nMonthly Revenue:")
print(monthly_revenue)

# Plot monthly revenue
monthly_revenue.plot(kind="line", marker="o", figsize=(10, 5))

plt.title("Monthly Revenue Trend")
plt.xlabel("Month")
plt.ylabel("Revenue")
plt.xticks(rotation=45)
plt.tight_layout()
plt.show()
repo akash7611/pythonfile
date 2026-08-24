@@ -1,0 +1,75 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Load dataset
+df = pd.read_csv("ecommerce_sales.csv")
+
+# Basic information
+print("Dataset Shape:", df.shape)
+print("\nColumn Names:")
+print(df.columns)
+
+# Check missing values
+print("\nMissing Values:")
+print(df.isnull().sum())
+
+# Remove duplicate records
+df = df.drop_duplicates()
+
+# Convert date column
+df["Order_Date"] = pd.to_datetime(df["Order_Date"])
+
+# Create revenue column
+df["Revenue"] = df["Quantity"] * df["Unit_Price"]
+
+# Total revenue
+total_revenue = df["Revenue"].sum()
+print("\nTotal Revenue:", round(total_revenue, 2))
+
+# Total orders
+total_orders = df["Order_ID"].nunique()
+print("Total Orders:", total_orders)
+
+# Total customers
+total_customers = df["Customer_ID"].nunique()
+print("Total Customers:", total_customers)
+
+# Top selling products
+top_products = (
+    df.groupby("Product")["Quantity"]
+    .sum()
+    .sort_values(ascending=False)
+    .head(10)
+)
+
+print("\nTop 10 Products:")
+print(top_products)
+
+# Revenue by category
+category_revenue = (
+    df.groupby("Category")["Revenue"]
+    .sum()
+    .sort_values(ascending=False)
+)
+
+print("\nRevenue by Category:")
+print(category_revenue)
+
+# Monthly revenue
+monthly_revenue = (
+    df.groupby(df["Order_Date"].dt.to_period("M"))["Revenue"]
+    .sum()
+)
+
+print("\nMonthly Revenue:")
+print(monthly_revenue)
+
+# Plot monthly revenue
+monthly_revenue.plot(kind="line", marker="o", figsize=(10, 5))
+
+plt.title("Monthly Revenue Trend")
+plt.xlabel("Month")
+plt.ylabel("Revenue")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
