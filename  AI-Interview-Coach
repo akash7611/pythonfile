@@ -1,0 +1,348 @@
+from flask import Flask, request, jsonify, render_template_string
+import re
+
+app = Flask(__name__)
+
+HTML = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Interview Coach</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #eef2ff;
+            margin: 0;
+            padding: 30px;
+        }
+
+        .box {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 18px;
+            box-shadow: 0 10px 30px #0002;
+        }
+
+        h1 {
+            text-align: center;
+            color: #1e3a8a;
+        }
+
+        textarea {
+            width: 100%;
+            height: 130px;
+            margin: 10px 0 20px;
+            padding: 12px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            font-size: 15px;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            border: 0;
+            border-radius: 10px;
+            background: #2563eb;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        #result {
+            display: none;
+            margin-top: 25px;
+        }
+
+        .score {
+            text-align: center;
+            font-size: 55px;
+            font-weight: bold;
+            color: #2563eb;
+        }
+
+        .cards {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .card {
+            flex: 1;
+            background: #eff6ff;
+            padding: 15px;
+            text-align: center;
+            border-radius: 10px;
+        }
+
+        .card b {
+            font-size: 25px;
+        }
+
+        .suggestion {
+            background: #fef3c7;
+            padding: 15px;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="box">
+
+    <h1>🤖 AI Interview Coach</h1>
+
+    <p>
+        Analyze your interview answer and get an intelligent performance score.
+    </p>
+
+    <label><b>Interview Question</b></label>
+
+    <textarea id="question"
+    placeholder="Example: What is Machine Learning?"></textarea>
+
+    <label><b>Your Answer</b></label>
+
+    <textarea id="answer"
+    placeholder="Write your answer here..."></textarea>
+
+    <button onclick="analyze()">Analyze Answer</button>
+
+    <div id="result">
+
+        <h2>Interview Result</h2>
+
+        <div class="score">
+            <span id="score">0</span>/100
+        </div>
+
+        <div class="cards">
+
+            <div class="card">
+                <p>Relevance</p>
+                <b id="relevance">0%</b>
+            </div>
+
+            <div class="card">
+                <p>Communication</p>
+                <b id="communication">0%</b>
+            </div>
+
+            <div class="card">
+                <p>Detail</p>
+                <b id="detail">0%</b>
+            </div>
+
+        </div>
+
+        <h3>✅ Strengths</h3>
+        <ul id="strengths"></ul>
+
+        <h3>⚠️ Improve</h3>
+        <ul id="weaknesses"></ul>
+
+        <h3>💡 AI Suggestion</h3>
+        <div class="suggestion" id="suggestion"></div>
+
+    </div>
+
+</div>
+
+<script>
+
+async function analyze() {
+
+    let question =
+        document.getElementById("question").value.trim();
+
+    let answer =
+        document.getElementById("answer").value.trim();
+
+    if (!question || !answer) {
+        alert("Please enter question and answer.");
+        return;
+    }
+
+    let response = await fetch("/analyze", {
+
+        method: "POST",
+
+        headers: {
+            "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+            question: question,
+            answer: answer
+        })
+    });
+
+    let data = await response.json();
+
+    document.getElementById("result").style.display = "block";
+
+    document.getElementById("score").innerText = data.score;
+    document.getElementById("relevance").innerText =
+        data.relevance + "%";
+    document.getElementById("communication").innerText =
+        data.communication + "%";
+    document.getElementById("detail").innerText =
+        data.detail + "%";
+
+    document.getElementById("strengths").innerHTML =
+        data.strengths.map(x => "<li>" + x + "</li>").join("");
+
+    document.getElementById("weaknesses").innerHTML =
+        data.weaknesses.map(x => "<li>" + x + "</li>").join("");
+
+    document.getElementById("suggestion").innerText =
+        data.suggestion;
+}
+
+</script>
+
+</body>
+</html>
+"""
+
+
+def words(text):
+    return set(
+        re.findall(r"\b[a-zA-Z]+\b", text.lower())
+    )
+
+
+def analyze(question, answer):
+
+    q_words = words(question)
+    a_words = words(answer)
+
+    matched = q_words.intersection(a_words)
+
+    relevance = 0
+
+    if q_words:
+        relevance = int(
+            len(matched) / len(q_words) * 100
+        )
+
+    word_count = len(a_words)
+
+    if word_count >= 80:
+        detail = 95
+    elif word_count >= 50:
+        detail = 85
+    elif word_count >= 30:
+        detail = 75
+    elif word_count >= 15:
+        detail = 60
+    else:
+        detail = 40
+
+    sentences = re.split(r"[.!?]", answer)
+    sentences = [x for x in sentences if x.strip()]
+
+    average = (
+        word_count / len(sentences)
+        if sentences else word_count
+    )
+
+    communication = 90 if 8 <= average <= 25 else 70
+
+    score = int(
+        relevance * 0.45 +
+        communication * 0.25 +
+        detail * 0.30
+    )
+
+    strengths = []
+    weaknesses = []
+
+    if relevance >= 70:
+        strengths.append("Answer is relevant to the question.")
+    else:
+        weaknesses.append(
+            "Add more keywords related to the question."
+        )
+
+    if communication >= 75:
+        strengths.append("Good sentence structure.")
+    else:
+        weaknesses.append(
+            "Try to make your explanation clearer."
+        )
+
+    if detail >= 75:
+        strengths.append("Good level of detail.")
+    else:
+        weaknesses.append(
+            "Add more explanation and examples."
+        )
+
+    if score >= 85:
+        suggestion = (
+            "Excellent answer! Add a real-world example "
+            "to make it even stronger."
+        )
+    elif score >= 70:
+        suggestion = (
+            "Good answer. Add technical details "
+            "and a practical example."
+        )
+    elif score >= 50:
+        suggestion = (
+            "Average answer. Focus on relevant concepts "
+            "and explain them clearly."
+        )
+    else:
+        suggestion = (
+            "Improve your answer by directly explaining "
+            "the concept and adding examples."
+        )
+
+    return {
+        "score": score,
+        "relevance": relevance,
+        "communication": communication,
+        "detail": detail,
+        "strengths": strengths,
+        "weaknesses": weaknesses,
+        "suggestion": suggestion
+    }
+
+
+@app.route("/")
+def home():
+    return render_template_string(HTML)
+
+
+@app.route("/analyze", methods=["POST"])
+def analyze_api():
+
+    data = request.get_json()
+
+    question = data.get("question", "")
+    answer = data.get("answer", "")
+
+    if not question or not answer:
+        return jsonify({
+            "error": "Question and answer required"
+        }), 400
+
+    return jsonify(
+        analyze(question, answer)
+    )
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
